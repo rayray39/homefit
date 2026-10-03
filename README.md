@@ -1,3 +1,5 @@
+![HomeFit SG — find the home that fits every trip](public/banner.png)
+
 # HomeFit SG
 
 A map-based home-location optimiser for Singapore. Pick 2–3 MRT stations and/or schools,
