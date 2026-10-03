@@ -1,69 +1,130 @@
-import Image from "next/image";
+"use client";
+
+import dynamic from "next/dynamic";
+import { useState } from "react";
+import ResultList from "@/components/ResultList";
+import SearchPanel from "@/components/SearchPanel";
+import stationsData from "@/data/cleaned-mrt-stations.json";
+import schoolsData from "@/data/cleaned-schools.json";
+import type { RecommendResponse, ScoredBlock, SelectablePoint } from "@/types";
+
+const MapView = dynamic(() => import("@/components/MapView"), {
+  ssr: false,
+  loading: () => <div className="h-full w-full bg-slate-100" />,
+});
+
+const stations = stationsData as SelectablePoint[];
+const schools = schoolsData as SelectablePoint[];
 
 export default function Home() {
+  const [selected, setSelected] = useState<SelectablePoint[]>([]);
+  const [results, setResults] = useState<ScoredBlock[]>([]);
+  const [totalMatched, setTotalMatched] = useState(0);
+  const [shownPoints, setShownPoints] = useState<SelectablePoint[]>([]);
+  const [focus, setFocus] = useState<ScoredBlock | null>(null);
+  const [searched, setSearched] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function findBlocks() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/recommend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          selectedPoints: selected.map(({ id, type, name, lat, lon }) => ({
+            id,
+            type,
+            name,
+            lat,
+            lon,
+          })),
+        }),
+      });
+      const data = (await res.json()) as RecommendResponse & { error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Could not calculate recommendations.");
+      setResults(data.results);
+      setTotalMatched(data.totalMatched);
+      setShownPoints(selected);
+      setFocus(null);
+      setSearched(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong.");
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const hasSchool = shownPoints.some((p) => p.type === "school");
+
+  /** On a phone the map sits above the panel, so bring it back into view. */
+  function zoomTo(block: ScoredBlock) {
+    setFocus(block);
+    document.getElementById("map")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    // Phone: map on top, everything scrolls as one page. Desktop: fixed side panel.
+    <main className="flex min-h-dvh flex-col md:h-dvh md:flex-row md:overflow-hidden">
+      <div id="map" className="h-[45dvh] shrink-0 md:order-last md:h-dvh md:flex-1">
+        <MapView
+          selectedPoints={shownPoints.length ? shownPoints : selected}
+          results={results}
+          focus={focus}
+          onSelectBlock={setFocus}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+      </div>
+
+      <aside className="flex w-full flex-col bg-white md:h-dvh md:w-[400px] md:border-r md:border-slate-200">
+        <header className="border-b border-slate-200 px-4 py-3">
+          <h1 className="text-lg font-bold tracking-tight text-slate-900">HomeFit SG</h1>
+          <p className="text-xs text-slate-500">
+            Find HDB blocks that balance the places your household cares about.
           </p>
+        </header>
+
+        <SearchPanel
+          stations={stations}
+          schools={schools}
+          selected={selected}
+          onChange={setSelected}
+          onSubmit={findBlocks}
+          loading={loading}
+        />
+
+        <div className="md:min-h-0 md:flex-1 md:overflow-y-auto">
+          <ResultList
+            results={results}
+            totalMatched={totalMatched}
+            activeBlockId={focus?.blockId ?? null}
+            error={error}
+            searched={searched}
+            loading={loading}
+            onZoom={zoomTo}
+          />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+
+        <footer className="space-y-1 border-t border-slate-200 bg-slate-50 px-4 py-3 text-[11px] leading-snug text-slate-500">
+          <p>
+            Distances are approximate straight-line distances and may differ from actual walking
+            routes.
+          </p>
+          <p>Best match based on selected MRT and school locations, not property advice.</p>
+          {hasSchool && (
+            <p>
+              Distance to school is shown for location planning only and does not guarantee school
+              admission priority or eligibility.
+            </p>
+          )}
+          <p>
+            Data: HDB, LTA and MOE via data.gov.sg; school coordinates geocoded from postal codes
+            via OpenStreetMap.
+          </p>
+        </footer>
+      </aside>
+    </main>
   );
 }
