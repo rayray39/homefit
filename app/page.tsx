@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import { useState } from "react";
 import ResultList from "@/components/ResultList";
 import SearchPanel from "@/components/SearchPanel";
@@ -80,7 +81,10 @@ export default function Home() {
 
       <aside className="flex w-full flex-col bg-white md:h-dvh md:w-[400px] md:border-r md:border-slate-200">
         <header className="border-b border-slate-200 px-4 py-3">
-          <h1 className="text-lg font-bold tracking-tight text-slate-900">HomeFit SG</h1>
+          <h1 className="flex items-center gap-2 text-lg font-bold tracking-tight text-slate-900">
+            <Image src="/logo.png" alt="" width={28} height={28} priority />
+            HomeFit SG
+          </h1>
           <p className="text-xs text-slate-500">
             Find HDB blocks that balance the places your household cares about.
           </p>
