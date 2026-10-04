@@ -4,7 +4,9 @@
 
 A map-based home-location optimiser for Singapore. Pick 2–3 MRT stations and/or schools,
 and HomeFit ranks HDB blocks by the equal-weighted average straight-line distance to all
-of them.
+of them.    
+
+Visit the site here: https://homefit-sigma.vercel.app/  
 
 Distances are **approximate straight-line (as-the-crow-flies) distances**, not walking
 routes.
