@@ -2,14 +2,29 @@
 
 import { useMemo, useState } from "react";
 import { MAX_POINTS, MIN_POINTS } from "@/lib/validation";
-import { SCHOOL_LEVEL_LABELS, type SchoolLevel, type SelectablePoint } from "@/types";
+import {
+  POINT_STYLES,
+  SCHOOL_LEVEL_LABELS,
+  type SchoolLevel,
+  type SelectablePoint,
+} from "@/types";
 
 const LEVELS = Object.keys(SCHOOL_LEVEL_LABELS) as SchoolLevel[];
 const MAX_SUGGESTIONS = 25;
 
+/** The secondary line under each suggestion. */
+function describe(point: SelectablePoint) {
+  if (point.type === "mrt") return `${point.exits?.length ?? 0} exits`;
+  if (point.type === "park") return "Park";
+  return [point.levels?.map((l) => SCHOOL_LEVEL_LABELS[l]).join(", "), point.area]
+    .filter(Boolean)
+    .join(" · ");
+}
+
 type Props = {
   stations: SelectablePoint[];
   schools: SelectablePoint[];
+  parks: SelectablePoint[];
   selected: SelectablePoint[];
   onChange: (points: SelectablePoint[]) => void;
   onSubmit: () => void;
@@ -19,25 +34,27 @@ type Props = {
 export default function SearchPanel({
   stations,
   schools,
+  parks,
   selected,
   onChange,
   onSubmit,
   loading,
 }: Props) {
   const [query, setQuery] = useState("");
-  const [levels, setLevels] = useState<SchoolLevel[]>([]);
+  const [levels, setLevels] = useState<SchoolLevel[]>([]);  // the level of the school (pri, sec, jc) selected by the user in the filter
 
   const suggestions = useMemo(() => {
     const q = query.trim().toLowerCase();
     const matchesLevel = (s: SelectablePoint) =>
       !levels.length || s.levels?.some((l) => levels.includes(l));
-    const pool = [...stations, ...schools.filter(matchesLevel)];
+    // The level chips filter schools only; stations and parks always show.
+    const pool = [...stations, ...schools.filter(matchesLevel), ...parks];
     if (!q) return [];
     return pool
       .filter((p) => p.name.toLowerCase().includes(q) && !selected.some((s) => s.id === p.id))
       .sort((a, b) => a.name.toLowerCase().indexOf(q) - b.name.toLowerCase().indexOf(q))
       .slice(0, MAX_SUGGESTIONS);
-  }, [query, levels, stations, schools, selected]);
+  }, [query, levels, stations, schools, parks, selected]);   // this is the list of suggested searches after the user types in something
 
   const full = selected.length >= MAX_POINTS;
   const canSubmit = selected.length >= MIN_POINTS && selected.length <= MAX_POINTS;
@@ -57,14 +74,15 @@ export default function SearchPanel({
     <section className="flex flex-col gap-3 border-b border-slate-200 p-4">
       <div>
         <label htmlFor="point-search" className="text-sm font-medium text-slate-700">
-          Search MRT stations and schools
+          Search MRT stations, schools and parks
         </label>
         <p className="text-xs text-slate-500">
           Pick {MIN_POINTS}–{MAX_POINTS} places. All of them count equally.
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-xs text-slate-500">Schools:</span>
         {LEVELS.map((level) => (
           <button
             key={level}
@@ -102,7 +120,9 @@ export default function SearchPanel({
           value={query}
           disabled={full}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder={full ? `Maximum ${MAX_POINTS} places selected` : "e.g. Sengkang, Nan Chiau"}
+          placeholder={
+            full ? `Maximum ${MAX_POINTS} places selected` : "e.g. Sengkang, Nan Chiau, Bishan Park"
+          }
           className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-900 disabled:bg-slate-100 disabled:text-slate-400"
         />
         {suggestions.length > 0 && (
@@ -122,19 +142,11 @@ export default function SearchPanel({
                 >
                   <span
                     aria-hidden
-                    className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
-                      point.type === "mrt" ? "bg-blue-600" : "bg-purple-600"
-                    }`}
+                    className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${POINT_STYLES[point.type].dot}`}
                   />
                   <span>
                     <span className="block font-medium text-slate-800">{point.name}</span>
-                    <span className="block text-xs text-slate-500">
-                      {point.type === "mrt"
-                        ? `${point.exits?.length ?? 0} exits`
-                        : [point.levels?.map((l) => SCHOOL_LEVEL_LABELS[l]).join(", "), point.area]
-                            .filter(Boolean)
-                            .join(" · ")}
-                    </span>
+                    <span className="block text-xs text-slate-500">{describe(point)}</span>
                   </span>
                 </button>
               </li>
@@ -149,9 +161,7 @@ export default function SearchPanel({
             <li key={point.id}>
               <span
                 className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
-                  point.type === "mrt"
-                    ? "bg-blue-100 text-blue-900"
-                    : "bg-purple-100 text-purple-900"
+                  POINT_STYLES[point.type].chip
                 }`}
               >
                 {point.name}

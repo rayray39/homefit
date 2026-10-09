@@ -6,6 +6,7 @@ import { useState } from "react";
 import ResultList from "@/components/ResultList";
 import SearchPanel from "@/components/SearchPanel";
 import stationsData from "@/data/cleaned-mrt-stations.json";
+import parksData from "@/data/cleaned-parks.json";
 import schoolsData from "@/data/cleaned-schools.json";
 import type { RecommendResponse, ScoredBlock, SelectablePoint } from "@/types";
 
@@ -16,17 +17,23 @@ const MapView = dynamic(() => import("@/components/MapView"), {
 
 const stations = stationsData as SelectablePoint[];
 const schools = schoolsData as SelectablePoint[];
+const parks = parksData as SelectablePoint[];
 
+// Home Page containing,
+// 1. Map
+// 2. Search Panel, for selecting the points
+// 3. Result List, the list of results, where each result is a Result Card
 export default function Home() {
-  const [selected, setSelected] = useState<SelectablePoint[]>([]);
+  const [selected, setSelected] = useState<SelectablePoint[]>([]);  // the points (mrt or school) selected by the user
   const [results, setResults] = useState<ScoredBlock[]>([]);
   const [totalMatched, setTotalMatched] = useState(0);
-  const [shownPoints, setShownPoints] = useState<SelectablePoint[]>([]);
+  const [shownPoints, setShownPoints] = useState<SelectablePoint[]>([]);  // the points shown on the map, selected by the user
   const [focus, setFocus] = useState<ScoredBlock | null>(null);
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // the user selected points will be taken in by this function and this function will send them to the API.
   async function findBlocks() {
     setLoading(true);
     setError(null);
@@ -60,6 +67,7 @@ export default function Home() {
   }
 
   const hasSchool = shownPoints.some((p) => p.type === "school");
+  const hasPark = shownPoints.some((p) => p.type === "park");
 
   /** On a phone the map sits above the panel, so bring it back into view. */
   function zoomTo(block: ScoredBlock) {
@@ -93,6 +101,7 @@ export default function Home() {
         <SearchPanel
           stations={stations}
           schools={schools}
+          parks={parks}
           selected={selected}
           onChange={setSelected}
           onSubmit={findBlocks}
@@ -116,7 +125,13 @@ export default function Home() {
             Distances are approximate straight-line distances and may differ from actual walking
             routes.
           </p>
-          <p>Best match based on selected MRT and school locations, not property advice.</p>
+          <p>Best match based on the locations you selected, not property advice.</p>
+          {hasPark && (
+            <p>
+              NParks records one indicative point per managed area, so a large park appears as
+              several entries and is measured from that point, not its nearest edge.
+            </p>
+          )}
           {hasSchool && (
             <p>
               Distance to school is shown for location planning only and does not guarantee school
@@ -124,8 +139,8 @@ export default function Home() {
             </p>
           )}
           <p>
-            Data: HDB, LTA and MOE via data.gov.sg; school coordinates geocoded from postal codes
-            via OpenStreetMap.
+            Data: HDB, LTA, MOE and NParks via data.gov.sg; school coordinates geocoded from
+            postal codes via OpenStreetMap.
           </p>
         </footer>
       </aside>

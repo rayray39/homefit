@@ -1,6 +1,6 @@
 "use client";
 
-import type { ScoredBlock } from "@/types";
+import { POINT_STYLES, type ScoredBlock } from "@/types";
 
 export const formatMeters = (m: number) => `${Math.round(m).toLocaleString("en-SG")} m`;
 
@@ -57,9 +57,7 @@ export default function ResultCard({ block, rank, active, onZoom }: Props) {
           <li key={d.pointId} className="flex items-center gap-1.5">
             <span
               aria-hidden
-              className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-                d.pointType === "mrt" ? "bg-blue-600" : "bg-purple-600"
-              }`}
+              className={`h-1.5 w-1.5 shrink-0 rounded-full ${POINT_STYLES[d.pointType].dot}`}
             />
             {formatMeters(d.distanceMeters)} to {d.pointName}
           </li>

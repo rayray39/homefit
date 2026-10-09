@@ -7,12 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "preprocess": "npm run preprocess:mrt && npm run preprocess:schools && npm run preprocess:hdb",
+    "preprocess": "npm run preprocess:mrt && npm run preprocess:schools && npm run preprocess:parks && npm run preprocess:hdb",
     "preprocess:mrt": "node --experimental-strip-types --no-warnings scripts/preprocess-mrt.ts",
     "preprocess:schools": "node --experimental-strip-types --no-warnings scripts/preprocess-schools.ts",
     "preprocess:hdb": "node --experimental-strip-types --no-warnings scripts/preprocess-hdb.ts",
     "test": "node --experimental-strip-types --no-warnings scripts/test-scoring.ts",
-    "postinstall": "node scripts/copy-maplibre-worker.mjs"
+    "postinstall": "node scripts/copy-maplibre-worker.mjs",
+    "preprocess:parks": "node --experimental-strip-types --no-warnings scripts/preprocess-parks.ts"
   },
   "dependencies": {
     "maplibre-gl": "^6.11.2",

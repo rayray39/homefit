@@ -47,3 +47,8 @@ body {
 .homefit-pin[data-kind="school"] .homefit-pin-label {
   background: #9333ea;
 }
+
+.homefit-pin[data-kind="park"] .homefit-pin-dot,
+.homefit-pin[data-kind="park"] .homefit-pin-label {
+  background: #0d9488;
+}

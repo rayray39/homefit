@@ -1,11 +1,18 @@
-export type PointType = "mrt" | "school";
+export type PointType = "mrt" | "school" | "park";
 
-/** A selectable search target: an MRT/LRT station (with all its exits) or a school. */
+/** Dot and chip classes per point type, kept together so the UI stays consistent. */
+export const POINT_STYLES: Record<PointType, { dot: string; chip: string }> = {
+  mrt: { dot: "bg-blue-600", chip: "bg-blue-100 text-blue-900" },
+  school: { dot: "bg-purple-600", chip: "bg-purple-100 text-purple-900" },
+  park: { dot: "bg-teal-600", chip: "bg-teal-100 text-teal-900" },
+};
+
+/** A selectable search target: an MRT/LRT station, a school or a park. */
 export type SelectablePoint = {
   id: string;
   type: PointType;
   name: string;
-  /** Representative coordinate (station centroid / school location). */
+  /** Representative coordinate (station centroid / school / park point). */
   lat: number;
   lon: number;
   /** MRT only: every exit of the station. Distance uses the nearest one. */
@@ -39,11 +46,12 @@ export type HdbBlock = {
 
 export type DistanceBreakdown = {
   pointId: string;
-  pointName: string;
+  pointName: string;      // name of the user selected point
   pointType: PointType;
-  distanceMeters: number;
+  distanceMeters: number; // distance from HDB block to the selected point
 };
 
+// Results, the recommended blocks
 export type ScoredBlock = {
   blockId: string;
   blockName: string;
@@ -51,7 +59,7 @@ export type ScoredBlock = {
   postal: string;
   lat: number;
   lon: number;
-  scoreMeters: number;
+  scoreMeters: number;  // the average distance from this HDB block to all user selected points
   distances: DistanceBreakdown[];
 };
 

@@ -23,11 +23,11 @@ export function calculateHomeFitScore(
     pointName: point.name,
     pointType: point.type,
     distanceMeters: distanceToPoint(block, point),
-  }));
+  }));  // this is the list of distances of this HDB block to each of the selected points
 
   const scoreMeters =
     distances.reduce((sum, item) => sum + item.distanceMeters, 0) /
-    distances.length;
+    distances.length;   // average distance of this HDB block to all selected points
 
   return {
     blockId: block.id,
@@ -58,12 +58,13 @@ export function rankBlocks(
       block.lon < box.minLon ||
       block.lon > box.maxLon
     ) {
+      // block is outside the box, outside 2 km of all selected points 
       continue;
     }
     const scored = calculateHomeFitScore(block, selectedPoints);
     if (scored.distances.every((d) => d.distanceMeters <= MAX_DISTANCE_METERS)) {
       matched.push(scored);
-    }
+    }   // if the distance of this HDB block to all selected points is less than MAX_DISTANCE_METERS, add to matched
   }
 
   matched.sort((a, b) => a.scoreMeters - b.scoreMeters);

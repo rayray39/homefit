@@ -1,5 +1,6 @@
 import blocks from "@/data/cleaned-hdb-buildings.json";
 import mrtStations from "@/data/cleaned-mrt-stations.json";
+import parks from "@/data/cleaned-parks.json";
 import schools from "@/data/cleaned-schools.json";
 import { rankBlocks } from "@/lib/scoring";
 import { validateSelection } from "@/lib/validation";
@@ -8,7 +9,11 @@ import type { HdbBlock, RecommendResponse, SelectablePoint } from "@/types";
 const TOP_N = 20;
 
 const catalogue = new Map<string, SelectablePoint>(
-  [...(mrtStations as SelectablePoint[]), ...(schools as SelectablePoint[])].map((p) => [p.id, p])
+  [
+    ...(mrtStations as SelectablePoint[]),
+    ...(schools as SelectablePoint[]),
+    ...(parks as SelectablePoint[]),
+  ].map((p) => [p.id, p])
 );
 
 export async function POST(request: Request): Promise<Response> {

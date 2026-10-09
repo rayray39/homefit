@@ -60,7 +60,23 @@ assert.deepEqual(
 );
 assert.equal(rankBlocks(blocks, [station, school], 1).results.length, 1, "limit applies");
 
+// --- parks score exactly like any other point --------------------------
+const park: SelectablePoint = { id: "p1", type: "park", name: "P", lat: 1.4, lon: 103.909 };
+const withPark = calculateHomeFitScore(block, [station, park]);
+assert.deepEqual(
+  withPark.distances.map((d) => d.pointType),
+  ["mrt", "park"],
+  "the point type is carried through to the breakdown"
+);
+near(withPark.distances[1].distanceMeters, 1001, 20); // ~0.009 deg of longitude
+
 // --- validation --------------------------------------------------------
+assert.equal(validateSelection([station, park]).ok, true, "parks are a valid type");
+assert.equal(
+  validateSelection([station, { ...park, type: "condo" as never }]).ok,
+  false,
+  "unknown point types rejected"
+);
 assert.equal(validateSelection([station]).ok, false, "1 point is too few");
 assert.equal(validateSelection([station, school, station, school]).ok, false, "4 is too many");
 assert.equal(validateSelection([station, station]).ok, false, "duplicates rejected");

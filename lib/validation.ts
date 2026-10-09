@@ -1,4 +1,6 @@
-import type { SelectablePoint } from "../types/index.ts";
+import { POINT_STYLES, type PointType, type SelectablePoint } from "../types/index.ts";
+
+const POINT_TYPES = Object.keys(POINT_STYLES) as PointType[];
 
 export const MIN_POINTS = 2;
 export const MAX_POINTS = 3;
@@ -31,7 +33,7 @@ export function validateSelection(points: unknown): {
     if (
       typeof id !== "string" ||
       typeof name !== "string" ||
-      (type !== "mrt" && type !== "school") ||
+      !POINT_TYPES.includes(type as PointType) ||
       !isLat(lat) ||
       !isLon(lon)
     ) {
@@ -45,7 +47,7 @@ export function validateSelection(points: unknown): {
           )
           .map((e) => ({ code: String(e.code ?? ""), lat: e.lat, lon: e.lon }))
       : undefined;
-    clean.push({ id, type, name, lat, lon, exits: cleanExits });
+    clean.push({ id, type: type as PointType, name, lat, lon, exits: cleanExits });
   }
 
   if (new Set(clean.map((p) => p.id)).size !== clean.length) {
