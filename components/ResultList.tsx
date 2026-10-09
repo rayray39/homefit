@@ -38,7 +38,8 @@ export default function ResultList({
     return (
       <div className="p-4 text-sm text-slate-500">
         <p>
-          Select 2–3 MRT stations or schools, then press <strong>Find Best Blocks</strong>.
+          Select 2–3 MRT stations, schools or parks, then press{" "}
+          <strong>Find Best Blocks</strong>.
         </p>
         <p className="mt-2">
           HomeFit ranks HDB blocks by their equal-weighted average straight-line distance to

@@ -19,19 +19,36 @@ const stations = stationsData as SelectablePoint[];
 const schools = schoolsData as SelectablePoint[];
 const parks = parksData as SelectablePoint[];
 
+/**
+ * One completed search. Null before the first search and whenever the selection
+ * changes, because blocks ranked against the old points are no longer the answer.
+ * The points are kept here, not read from `selected`, so the map keeps showing the
+ * pins the results were actually scored against.
+ */
+type Outcome = {
+  points: SelectablePoint[];
+  results: ScoredBlock[];
+  totalMatched: number;
+};
+
 // Home Page containing,
 // 1. Map
 // 2. Search Panel, for selecting the points
 // 3. Result List, the list of results, where each result is a Result Card
 export default function Home() {
-  const [selected, setSelected] = useState<SelectablePoint[]>([]);  // the points (mrt or school) selected by the user
-  const [results, setResults] = useState<ScoredBlock[]>([]);
-  const [totalMatched, setTotalMatched] = useState(0);
-  const [shownPoints, setShownPoints] = useState<SelectablePoint[]>([]);  // the points shown on the map, selected by the user
+  const [selected, setSelected] = useState<SelectablePoint[]>([]);  // the points (mrt, school or park) selected by the user
+  const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [focus, setFocus] = useState<ScoredBlock | null>(null);
-  const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  /** Changing the selection invalidates whatever is on the map — clear it. */
+  function changeSelection(points: SelectablePoint[]) {
+    setSelected(points);
+    setOutcome(null);
+    setFocus(null);
+    setError(null);
+  }
 
   // the user selected points will be taken in by this function and this function will send them to the API.
   async function findBlocks() {
@@ -53,21 +70,18 @@ export default function Home() {
       });
       const data = (await res.json()) as RecommendResponse & { error?: string };
       if (!res.ok) throw new Error(data.error ?? "Could not calculate recommendations.");
-      setResults(data.results);
-      setTotalMatched(data.totalMatched);
-      setShownPoints(selected);
+      setOutcome({ points: selected, results: data.results, totalMatched: data.totalMatched });
       setFocus(null);
-      setSearched(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong.");
-      setResults([]);
+      setOutcome(null);
     } finally {
       setLoading(false);
     }
   }
 
-  const hasSchool = shownPoints.some((p) => p.type === "school");
-  const hasPark = shownPoints.some((p) => p.type === "park");
+  const hasSchool = outcome?.points.some((p) => p.type === "school");
+  const hasPark = outcome?.points.some((p) => p.type === "park");
 
   /** On a phone the map sits above the panel, so bring it back into view. */
   function zoomTo(block: ScoredBlock) {
@@ -80,8 +94,8 @@ export default function Home() {
     <main className="flex min-h-dvh flex-col md:h-dvh md:flex-row md:overflow-hidden">
       <div id="map" className="h-[45dvh] shrink-0 md:order-last md:h-dvh md:flex-1">
         <MapView
-          selectedPoints={shownPoints.length ? shownPoints : selected}
-          results={results}
+          selectedPoints={outcome?.points ?? selected}
+          results={outcome?.results ?? []}
           focus={focus}
           onSelectBlock={setFocus}
         />
@@ -103,18 +117,18 @@ export default function Home() {
           schools={schools}
           parks={parks}
           selected={selected}
-          onChange={setSelected}
+          onChange={changeSelection}
           onSubmit={findBlocks}
           loading={loading}
         />
 
         <div className="md:min-h-0 md:flex-1 md:overflow-y-auto">
           <ResultList
-            results={results}
-            totalMatched={totalMatched}
+            results={outcome?.results ?? []}
+            totalMatched={outcome?.totalMatched ?? 0}
             activeBlockId={focus?.blockId ?? null}
             error={error}
-            searched={searched}
+            searched={outcome !== null}
             loading={loading}
             onZoom={zoomTo}
           />
